@@ -1,1 +1,1 @@
-# sha1backup
+# hashbackup
