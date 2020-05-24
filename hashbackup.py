@@ -24,24 +24,27 @@ if __name__ == '__main__':
     group.add_argument("-s", "--sync", action="store_true", help="Hash & copy new and changed files")
     parser.add_argument("-d", "--delete", action="store_true", help="Sync & delete old files in destination")
     parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode")
-    parser.add_argument("-b", type=int, dest="buffer", metavar=" BUFFER", help="Buffer size in MB", default=100)
     parser.add_argument("-l", type=str, dest="log", metavar=" LOG", help="Write output to log file")
     args = parser.parse_args()
+
     if args.log:
-        logging.basicConfig(filename=args.log, filemode='a', format='%(asctime)s %(message)s',
-                            datefmt='%m.%d.%Y %H:%M:%S', level=logging.DEBUG)
-    if args.buffer <= 0:
-        args.buffer = 1
-    buffer_size = args.buffer * 1024**2
+        try:
+            logging.basicConfig(filename=args.log, filemode='a', format='%(asctime)s %(message)s',
+                                datefmt='%m.%d.%Y %H:%M:%S', level=logging.DEBUG)
+        except PermissionError:
+            print("Can't write to log file, permission error")
+            args.log = False
+
+    buffer_size = 1024**2 * 100
 
     if not args.sync:
         args.append = True
 
     if args.log:
         logging.debug("-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-")
-        logging.debug(f"args.source={args.source}, args.destination={args.destination}")
-        logging.debug(f"args.append={args.append}, args.sync={args.sync}")
-        logging.debug(f"args.delete={args.delete}, args.quiet={args.quiet}, args.buffer={args.buffer}")
+        logging.debug(f"source={args.source}, destination={args.destination}")
+        logging.debug(f"append={args.append}, sync={args.sync}")
+        logging.debug(f"delete={args.delete}, quiet={args.quiet}")
 
     if(Path(args.source).exists()) and (Path(args.destination).exists()):
         # 0 - files in src and dst, 1 - new in src, 2 - not in src
@@ -77,7 +80,11 @@ if __name__ == '__main__':
         if args.sync:
             lib.sha1_remove(args.source, source_list[0], "", args.quiet, args.log)
             for x in source_list[0]:
-                lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
+                # lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
+                try:
+                    lib.sha1_write_queue(args.source, x, buffer_size, args.quiet, args.log)
+                except PermissionError:
+                    lib.print_out("IO Error, no permission to read/write", args.quiet, args.log)
             for_copy += lib.exist_files_check(args.source, args.destination, source_list[0],
                                               buffer_size, args.quiet, args.log)
 
@@ -85,7 +92,11 @@ if __name__ == '__main__':
         if args.append:
             lib.print_out("", args.quiet, args.log)
         for x in source_list[1]:
-            lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
+            # lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
+            try:
+                lib.sha1_write_queue(args.source, x, buffer_size, args.quiet, args.log)
+            except PermissionError:
+                lib.print_out("IO Error, no permission to read/write", args.quiet, args.log)
             for_copy.append(x)
 
     if for_copy:
