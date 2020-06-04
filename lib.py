@@ -6,6 +6,13 @@ import threading
 from pathlib import Path
 
 
+class Block:
+
+    def __init__(self, number, data):
+        self.number = number
+        self.data = data
+
+
 def file_array(path, real_file):
     """
     :return: files list OR .sha1 list in <path> folder
@@ -44,7 +51,6 @@ def exist_files_check(src, dst, file_list, buffer, quiet, log):
             with open(Path(f"{path}\\{name}.sha1"), 'r') as s:
                 string = s.readline()
         except FileNotFoundError:
-            # return sha1_write(path, name, buffer, quiet, log) if need_update else 0
             return sha1_write_queue(path, name, buffer, quiet, log) if need_update else 0
         return string.split("   ")[0]  # ← 3 spaces!
 
@@ -65,47 +71,18 @@ def print_out(msg, quiet, log):
         logging.debug(f"{msg}")
 
 
-# def hashgen_file(filename, buffsize, quiet, log):
-#     """
-#     :return: sha1 of <filename> using <buffsize> megabytes buffer
-#     """
-#     filehash = hashlib.sha1()
-#     print_out(f"Generating hash for: {filename}", quiet, log)
-#     with open(filename, mode='rb') as file:
-#         while True:
-#             try:
-#                 buffer = file.read(buffsize)
-#             except MemoryError:
-#                 print_out("Not enough memory.", quiet, log)
-#                 raise SystemExit(0)
-#             filehash.update(buffer)
-#             if not buffer:
-#                 break
-#     return filehash.hexdigest()
-#
-#
-# def sha1_write(path, name, buffer, quiet, log):
-#     """
-#     :return: sha1 of file <name> in <path> folder
-#     AND writes sha1 to <name>.sha1 file
-#     """
-#     sha1sum = hashgen_file(Path(f"{path}\\{name}"), buffer, quiet, log)
-#     with open(Path(f"{path}\\{name}.sha1"), 'w', encoding="utf8") as sha1file:
-#         sha1file.write(f"{sha1sum}   {name}")  # ← 3 spaces!
-#     return sha1sum
-
-
 def sha1_write_queue(path, name, bufsize, quiet, log):
 
     q = queue.Queue()
-    hash_array = []
+    hash_array = {}
+    block_counter = 0
 
     def worker():
         while True:
             sha = hashlib.sha1()
             item = q.get()
-            sha.update(item)
-            hash_array.append(sha.digest())
+            sha.update(item.data)
+            hash_array[item.number] = sha.digest()
             q.task_done()
 
     filename = Path(f"{path}\\{name}")
@@ -116,17 +93,18 @@ def sha1_write_queue(path, name, bufsize, quiet, log):
     with open(filename, mode='rb') as file:
         while True:
             try:
-                buffer = file.read(bufsize)
+                block = Block(block_counter, file.read(bufsize))
             except MemoryError:
                 print_out("Not enough memory.", quiet, log)
                 raise SystemExit(0)
-            if not buffer:
+            if not block.data:
                 break
-            q.put(buffer)
+            q.put(block)
+            block_counter += 1
     q.join()
     sha1 = hashlib.sha1()
-    for i in hash_array:
-        sha1.update(i)
+    for i in sorted(list(hash_array)):
+        sha1.update(hash_array[i])
     with open(Path(f"{path}\\{name}.sha1"), 'w', encoding="utf8") as sha1file:
         sha1file.write(f"{sha1.hexdigest()}   {name}")  # ← 3 spaces!
     return sha1.hexdigest()

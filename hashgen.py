@@ -50,7 +50,6 @@ if __name__ == '__main__':
     if args.generate:
         lib.print_out("", args.quiet, args.log)
         for x in source_list:
-            # lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
             try:
                 lib.sha1_write_queue(args.source, x, buffer_size, args.quiet, args.log)
             except PermissionError:

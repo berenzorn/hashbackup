@@ -80,7 +80,6 @@ if __name__ == '__main__':
         if args.sync:
             lib.sha1_remove(args.source, source_list[0], "", args.quiet, args.log)
             for x in source_list[0]:
-                # lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
                 try:
                     lib.sha1_write_queue(args.source, x, buffer_size, args.quiet, args.log)
                 except PermissionError:
@@ -92,7 +91,6 @@ if __name__ == '__main__':
         if args.append:
             lib.print_out("", args.quiet, args.log)
         for x in source_list[1]:
-            # lib.sha1_write(args.source, x, buffer_size, args.quiet, args.log)
             try:
                 lib.sha1_write_queue(args.source, x, buffer_size, args.quiet, args.log)
             except PermissionError:
