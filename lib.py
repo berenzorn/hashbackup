@@ -82,12 +82,14 @@ def sha1_write_queue(path, name, bufsize, quiet, log):
             sha = hashlib.sha1()
             item = q.get()
             sha.update(item.data)
+            item.data = None
             hash_array[item.number] = sha.digest()
             q.task_done()
 
     filename = Path(f"{path}\\{name}")
     print_out(f"Generating hash for: {filename}", quiet, log)
     # TODO config param
+    threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=worker, daemon=True).start()
     with open(filename, mode='rb') as file:
