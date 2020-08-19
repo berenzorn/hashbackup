@@ -36,8 +36,9 @@ def new_files(src, dst):
     dst_list = [file.name for file in dst_array]
     sd_diff = sorted(list(set(src_list) - set(dst_list)))
     ds_diff = sorted(list(set(dst_list) - set(src_list)))
+    common = sorted(list(set(dst_list) & set(src_list)))
     # 0 - files in src and dst, 1 - new in src, 2 - not in src
-    return dst_list, sd_diff, ds_diff
+    return common, sd_diff, ds_diff
 
 
 def exist_files_check(src, dst, file_list, buffer, quiet, log):
@@ -89,7 +90,6 @@ def sha1_write_queue(path, name, bufsize, quiet, log):
     filename = Path(f"{path}\\{name}")
     print_out(f"Generating hash for: {filename}", quiet, log)
     # TODO config param
-    threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=worker, daemon=True).start()
     with open(filename, mode='rb') as file:

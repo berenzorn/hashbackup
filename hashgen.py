@@ -7,10 +7,11 @@ from pathlib import Path
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("source")
-    # parser.add_argument("-g", "--generate", action="store_true", help="Generate .sha1 for source")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-a", "--generate-all", dest="generall", action="store_true", help="Generate .sha1 for source")
-    group.add_argument("-n", "--generate-new", dest="genernew", action="store_true", help="Generate .sha1 for new files")
+    group.add_argument("-g", "--generate-all", dest="generall",
+                       action="store_true", help="Generate .sha1 for source")
+    group.add_argument("-n", "--generate-new", dest="genernew",
+                       action="store_true", help="Generate .sha1 for new files. Default")
     parser.add_argument("-c", "--clear", action="store_true", help="Clear .sha1 orphans")
     parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode, no output")
     parser.add_argument("-l", type=str, dest="log", metavar=" LOG", help="Write output to log file")
