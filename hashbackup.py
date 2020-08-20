@@ -59,12 +59,12 @@ if __name__ == '__main__':
             lib.print_out(f"{i}", args.quiet, args.log)
 
     for_copy = []
-    if source_list[2]:
-        lib.print_out("", args.quiet, args.log)
-        lib.print_out("Files not in source: ", args.quiet, args.log)
-        for x in source_list[2]:
-            lib.print_out(f"{x}", args.quiet, args.log)
-        if args.delete:
+    if args.delete:
+        if source_list[2]:
+            lib.print_out("", args.quiet, args.log)
+            lib.print_out("Files not in source: ", args.quiet, args.log)
+            for x in source_list[2]:
+                lib.print_out(f"{x}", args.quiet, args.log)
             lib.print_out("", args.quiet, args.log)
             lib.print_out("Removing these files", args.quiet, args.log)
             for x in source_list[2]:
