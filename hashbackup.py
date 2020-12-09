@@ -16,8 +16,8 @@ if __name__ == '__main__':
     Files in the destination without hash - put file in the source into copy list.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("source")
-    parser.add_argument("destination")
+    parser.add_argument("source", type=str)
+    parser.add_argument("destination", type=str)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-a", "--append", action="store_true", help="Copy new files only. Default")
     group.add_argument("-s", "--sync", action="store_true", help="Copy new and changed files")

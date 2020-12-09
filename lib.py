@@ -6,14 +6,7 @@ import threading
 from pathlib import Path
 
 
-class Block:
-
-    def __init__(self, number, data):
-        self.number = number
-        self.data = data
-
-
-def file_array(path, real_file):
+def file_array(path, real_file: bool):
     """
     :return: files list OR .sha1 list in <path> folder
     """
@@ -30,8 +23,8 @@ def new_files(src, dst):
     :return: files list that are in both folders,
     files only in source and only in destination
     """
-    src_array = file_array(src, True)
-    dst_array = file_array(dst, True)
+    src_array = file_array(src, real_file=True)
+    dst_array = file_array(dst, real_file=True)
     src_list = [file.name for file in src_array]
     dst_list = [file.name for file in dst_array]
     sd_diff = sorted(list(set(src_list) - set(dst_list)))
@@ -41,25 +34,26 @@ def new_files(src, dst):
     return common, sd_diff, ds_diff
 
 
+def dict_mount(path, name, buffer, quiet, log, need_update: bool):
+    try:
+        with open(Path(f"{path}\\{name}.sha1"), 'r') as s:
+            string = s.readline()
+    except FileNotFoundError:
+        return sha1_write_queue(path, name, buffer, quiet, log) if need_update else 0
+    return string.split("   ")[0]  # ← 3 spaces!
+
+
 def exist_files_check(src, dst, file_list, buffer, quiet, log):
     """
     Checking hashes in shared file_list for source and destination.
     :return: files list in source whose hash is different from destination
     OR if file in destination has no hash.
     """
-    def dict_mount(path, name, buffer, quiet, log, need_update):
-        try:
-            with open(Path(f"{path}\\{name}.sha1"), 'r') as s:
-                string = s.readline()
-        except FileNotFoundError:
-            return sha1_write_queue(path, name, buffer, quiet, log) if need_update else 0
-        return string.split("   ")[0]  # ← 3 spaces!
-
     src_dict = {}
     dst_dict = {}
     for file in file_list:
-        src_dict[file] = dict_mount(src, file, buffer, quiet, log, True)
-        dst_dict[file] = dict_mount(dst, file, buffer, quiet, log, False)
+        src_dict[file] = dict_mount(src, file, buffer, quiet, log, need_update=True)
+        dst_dict[file] = dict_mount(dst, file, buffer, quiet, log, need_update=False)
 
     diff_list = [name for name, sha1 in dst_dict.items() if src_dict[name.rstrip()] != sha1]
     return diff_list
@@ -78,6 +72,14 @@ def sha1_write_queue(path, name, bufsize, quiet, log):
     hash_array = {}
     block_counter = 0
 
+    buffer = (bufsize if 2 ** 20 < bufsize < 2 ** 30
+              else 100 * (2 ** 20))  # 1MB - 1GB else 100MB
+
+    class Block:
+        def __init__(self, number, data):
+            self.number = number
+            self.data = data
+
     def worker():
         while True:
             sha = hashlib.sha1()
@@ -89,13 +91,13 @@ def sha1_write_queue(path, name, bufsize, quiet, log):
 
     filename = Path(f"{path}\\{name}")
     print_out(f"Generating hash for: {filename}", quiet, log)
-    # TODO config param
-    threading.Thread(target=worker, daemon=True).start()
-    threading.Thread(target=worker, daemon=True).start()
+    threads = 3 if os.cpu_count() >= 4 else 2
+    for _ in range(threads):
+        threading.Thread(target=worker, daemon=True).start()
     with open(filename, mode='rb') as file:
         while True:
             try:
-                block = Block(block_counter, file.read(bufsize))
+                block = Block(block_counter, file.read(buffer))
             except MemoryError:
                 print_out("Not enough memory.", quiet, log)
                 raise SystemExit(0)

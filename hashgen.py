@@ -38,8 +38,8 @@ if __name__ == '__main__':
     orphans = []
     news = []
     if Path(args.source).exists():
-        source_list = [file.name for file in lib.file_array(args.source, True)]
-        sha1_list = [file.name[:-5] for file in lib.file_array(args.source, False)]
+        source_list = [file.name for file in lib.file_array(args.source, real_file=True)]
+        sha1_list = [file.name[:-5] for file in lib.file_array(args.source, real_file=False)]
         orphans = sorted(list(set(sha1_list) - set(source_list)))
         news = sorted(list(set(source_list) - set(sha1_list)))
     else:
