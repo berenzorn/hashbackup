@@ -1,9 +1,6 @@
 # hashbackup
 
-The script is designed to generate sha1 checksums for every file in the source directory, to make a backups from this directory to another one and compare these checksums later. The script don't use subfolders yet, I'll do it as soon as possible.
-
-## Requirements
-* python 3.6+
+The script is designed to generate sha1 checksums for every file in the source directory, to make a backups from this directory to another one and compare these checksums later. 
 
 ## Usage
 
@@ -37,7 +34,6 @@ optional arguments:
 - -l LOG = Write output to log file
   
 ### How to use it.
-
 Let's say you have two folders - C:\A (source) and C:\B (destination).
 First generate sha1 checksums. All files are new this time, so no need to use -g or -n key now.
 ```
@@ -57,13 +53,3 @@ And backup this bunch to second folder again, but now with **-s** (because we ha
 python hashbackup.py -s -d -l C:\123\log.txt C:\A C:\B
 ```
 And so on.
-
-Why SHA1. These checksums are generating nearly as fast as MD5 on my Skylake and they're longer at the same time. I wanted long shecksums :)
-
-## Contacts
-
-Telegram: @berenzorn
-
-Email: berenzorn@mail.ru
-
-Feel free to contact me if you have a questions. Have a nice day :)
