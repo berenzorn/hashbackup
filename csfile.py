@@ -10,19 +10,17 @@ class File:
 
 class CsFile:
     instances = {}
-    path = None
 
     @staticmethod
-    def get_instance():
-        if CsFile.path not in CsFile.instances:
-            CsFile(CsFile.path)
+    def get_instance(path):
+        if path not in CsFile.instances:
+            return CsFile(path)
         else:
-            return CsFile.instances[CsFile.path]
+            return CsFile.instances[path]
 
     def __init__(self, path):
-        CsFile.path = path
-        if path not in CsFile.instances:
-            CsFile.instances[path] = self
+        self.path = path
+        CsFile.instances[path] = self
         self.array = self.read_file()
 
     def read_file(self) -> dict:
@@ -49,16 +47,12 @@ class CsFile:
     def add_sha1(self, files: list):
         for x in files:
             self.array[x.name] = x.checksum
-        # self.truncate_file()
-        # self.write_file()
 
     def delete_sha1(self, names: list, msg, quiet, log):
         lib.print_out(msg, quiet, log)
         for x in names:
             if x in names:
                 del self.array[x]
-        # self.truncate_file()
-        # self.write_file()
 
     def write_file(self):
         self.truncate_file()

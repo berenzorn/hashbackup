@@ -49,10 +49,8 @@ if __name__ == '__main__':
         logging.debug(f"delete={args.delete}, quiet={args.quiet}")
 
     if (Path(args.source).exists()) and (Path(args.destination).exists()):
-        src_sha1 = CsFile(args.source).get_instance()
-        print('ss', src_sha1.array)
-        dst_sha1 = CsFile(args.destination).get_instance()
-        print('ds', dst_sha1.array)
+        src_sha1 = CsFile.get_instance(args.source)
+        dst_sha1 = CsFile.get_instance(args.destination)
         # 0 - files in src and dst, 1 - new in src, 2 - not in src
         source_list = lib.new_files(src_sha1, dst_sha1)
     else:
@@ -80,8 +78,6 @@ if __name__ == '__main__':
     if args.sync:
         for_copy += lib.exist_files_check(src_sha1, dst_sha1, source_list[0], B, Q, L)
     for_copy += source_list[1]
-    print('sl', source_list)
-    print('fc', for_copy)
     if for_copy:
         lib.print_out("", Q, L)
         checksums = []

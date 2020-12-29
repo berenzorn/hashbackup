@@ -40,7 +40,7 @@ if __name__ == '__main__':
     news = []
     orphans = []
     if Path(args.source).exists():
-        sha1_file = CsFile(args.source).get_instance()
+        sha1_file = CsFile.get_instance(args.source)
         source_list = [file for file in lib.file_array(sha1_file, real_file=True)]
         sha1_list = [file for file in lib.file_array(sha1_file, real_file=False)]
         orphans = sorted(list(set(sha1_list) - set(source_list)))

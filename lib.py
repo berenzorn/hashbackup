@@ -12,32 +12,21 @@ def file_array(cs_file: CsFile, real_file: bool):
     :return: files list OR .sha1 list in <path> folder
     """
     if real_file:
-        print('pt', cs_file.path)
         return [file.name for file in Path(cs_file.path).iterdir()
                 if file.is_file() and not file.name.endswith('.sha1')]
     else:
         return [file for file in cs_file.array]
 
 
-def new_files(src_sha1: CsFile, dst_sha1: CsFile):
+def new_files(src_file: CsFile, dst_file: CsFile):
     """
     :return: files list that are in both folders,
     files only in source and only in destination
     """
-    src_array = file_array(src_sha1, real_file=True)
-    print('rrr', src_sha1)
-    print('rrr', src_sha1.path)
-    print('rrr', src_sha1.instances)
-    dst_array = file_array(dst_sha1, real_file=True)
-    print('rrr', dst_sha1)
-    print('rrr', dst_sha1.path)
-    print('rrr', dst_sha1.instances)
-    print('srca', src_array)
-    print('dsta', dst_array)
+    src_array = file_array(src_file, real_file=True)
+    dst_array = file_array(dst_file, real_file=True)
     src_list = [file for file in src_array]
     dst_list = [file for file in dst_array]
-    print('srcl', src_list)
-    print('dstl', dst_list)
     sd_diff = sorted(list(set(src_list) - set(dst_list)))
     ds_diff = sorted(list(set(dst_list) - set(src_list)))
     common = sorted(list(set(dst_list) & set(src_list)))
