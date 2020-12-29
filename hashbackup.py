@@ -53,6 +53,7 @@ if __name__ == '__main__':
         dst_sha1 = CsFile.get_instance(args.destination)
         # 0 - files in src and dst, 1 - new in src, 2 - not in src
         source_list = lib.new_files(src_sha1, dst_sha1)
+        print(source_list)
     else:
         lib.print_out("No such source or destination folder.", Q, L)
         raise SystemExit(0)
@@ -72,14 +73,17 @@ if __name__ == '__main__':
                 lib.print_out(f"{x}", Q, L)
             lib.print_out("", Q, L)
             lib.print_out("Removing these files", Q, L)
+            # TODO fix
             dst_sha1.delete_sha1(source_list[2], "", Q, L)
             for x in source_list[2]:
                     os.remove(Path(f"{args.destination}\\{x}"))
     if args.sync:
+        lib.print_out("", Q, L)
         for_copy += lib.exist_files_check(src_sha1, dst_sha1, source_list[0], B, Q, L)
     for_copy += source_list[1]
     if for_copy:
-        lib.print_out("", Q, L)
+        if not args.sync:
+            lib.print_out("", Q, L)
         checksums = []
         for x in for_copy:
             lib.print_out(f"Copying file {x}", Q, L)
@@ -90,7 +94,7 @@ if __name__ == '__main__':
             else:
                 missed_chksum = File(x, lib.sha1_write(args.source, x, B, Q, L))
                 checksums.append(missed_chksum)
-                # src_sha1.add_sha1([missed_chksum])
+                src_sha1.add_sha1([missed_chksum])
         dst_sha1.add_sha1(checksums)
 
     src_sha1.write_file()

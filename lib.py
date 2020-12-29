@@ -49,15 +49,13 @@ def exist_files_check(src_sha1, dst_sha1, file_list, buffer, quiet, log):
     """
     src_dict = {}
     dst_dict = {}
-    src_cs_array = src_sha1.read_file()
-    dst_cs_array = dst_sha1.read_file()
     for file in file_list:
-        src_dict[file], updated = dict_mount(src_sha1.path, file, src_cs_array,
+        src_dict[file], updated = dict_mount(src_sha1.path, file, src_sha1.array,
                                              buffer, quiet, log, need_update=True)
-        dst_dict[file], _ = dict_mount(dst_sha1.path, file, dst_cs_array,
+        dst_dict[file], _ = dict_mount(dst_sha1.path, file, dst_sha1.array,
                                        buffer, quiet, log, need_update=False)
         if updated:
-            src_cs_array = src_sha1.read_file()
+            src_sha1.array[file] = src_dict[file]
     diff_list = [name for name, sha1 in dst_dict.items() if src_dict[name.rstrip()] != sha1]
     return diff_list
 
