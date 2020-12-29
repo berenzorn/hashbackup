@@ -5,6 +5,7 @@ import logging
 import argparse
 from pathlib import Path
 
+from csfile import CsFile, File
 
 if __name__ == '__main__':
     """
@@ -34,7 +35,9 @@ if __name__ == '__main__':
             print("Can't write to log file, permission error")
             args.log = False
 
-    buffer_size = 1024**2 * 100
+    B = 1024 ** 2 * 100  # buffer_size
+    Q = args.quiet
+    L = args.log
 
     if not args.sync:
         args.append = True
@@ -45,50 +48,54 @@ if __name__ == '__main__':
         logging.debug(f"append={args.append}, sync={args.sync}")
         logging.debug(f"delete={args.delete}, quiet={args.quiet}")
 
-    if(Path(args.source).exists()) and (Path(args.destination).exists()):
+    if (Path(args.source).exists()) and (Path(args.destination).exists()):
+        src_sha1 = CsFile(args.source).get_instance()
+        print('ss', src_sha1.array)
+        dst_sha1 = CsFile(args.destination).get_instance()
+        print('ds', dst_sha1.array)
         # 0 - files in src and dst, 1 - new in src, 2 - not in src
-        source_list = lib.new_files(args.source, args.destination)
+        source_list = lib.new_files(src_sha1, dst_sha1)
     else:
-        lib.print_out("No such source or destination folder.", args.quiet, args.log)
+        lib.print_out("No such source or destination folder.", Q, L)
         raise SystemExit(0)
 
     if source_list[1]:
-        lib.print_out("", args.quiet, args.log)
-        lib.print_out("New files in source: ", args.quiet, args.log)
+        lib.print_out("", Q, L)
+        lib.print_out("New files in source: ", Q, L)
         for i in source_list[1]:
-            lib.print_out(f"{i}", args.quiet, args.log)
+            lib.print_out(f"{i}", Q, L)
 
     for_copy = []
     if args.delete:
         if source_list[2]:
-            lib.print_out("", args.quiet, args.log)
-            lib.print_out("Files not in source: ", args.quiet, args.log)
+            lib.print_out("", Q, L)
+            lib.print_out("Files not in source: ", Q, L)
             for x in source_list[2]:
-                lib.print_out(f"{x}", args.quiet, args.log)
-            lib.print_out("", args.quiet, args.log)
-            lib.print_out("Removing these files", args.quiet, args.log)
+                lib.print_out(f"{x}", Q, L)
+            lib.print_out("", Q, L)
+            lib.print_out("Removing these files", Q, L)
+            dst_sha1.delete_sha1(source_list[2], "", Q, L)
             for x in source_list[2]:
-                try:
                     os.remove(Path(f"{args.destination}\\{x}"))
-                    os.remove(Path(f"{args.destination}\\{x}.sha1"))
-                except FileNotFoundError:
-                    pass
-                except PermissionError:
-                    pass
     if args.sync:
-        for_copy += lib.exist_files_check(args.source, args.destination, source_list[0],
-                                          buffer_size, args.quiet, args.log)
-    if source_list[1]:
-        for x in source_list[1]:
-            for_copy.append(x)
-
+        for_copy += lib.exist_files_check(src_sha1, dst_sha1, source_list[0], B, Q, L)
+    for_copy += source_list[1]
+    print('sl', source_list)
+    print('fc', for_copy)
     if for_copy:
-        lib.print_out("", args.quiet, args.log)
+        lib.print_out("", Q, L)
+        checksums = []
         for x in for_copy:
-            try:
-                lib.print_out(f"Copying file {x}", args.quiet, args.log)
-                shutil.copy(f"{args.source}\\{x}", args.destination)
-                shutil.copy(f"{args.source}\\{x}.sha1", args.destination)
-            except FileNotFoundError:
-                lib.sha1_write_queue(args.source, x, buffer_size, args.quiet, args.log)
-                shutil.copy(f"{args.source}\\{x}.sha1", args.destination)
+            lib.print_out(f"Copying file {x}", Q, L)
+            shutil.copy(f"{args.source}\\{x}", args.destination)
+            chksum = src_sha1.read_sha1(x)
+            if chksum:
+                checksums.append(File(x, chksum))
+            else:
+                missed_chksum = File(x, lib.sha1_write(args.source, x, B, Q, L))
+                checksums.append(missed_chksum)
+                # src_sha1.add_sha1([missed_chksum])
+        dst_sha1.add_sha1(checksums)
+
+    src_sha1.write_file()
+    dst_sha1.write_file()

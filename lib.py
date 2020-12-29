@@ -4,46 +4,55 @@ import hashlib
 import logging
 import threading
 from pathlib import Path
+from csfile import CsFile
 
 
-def file_array(path, real_file: bool):
+def file_array(cs_file: CsFile, real_file: bool):
     """
     :return: files list OR .sha1 list in <path> folder
     """
     if real_file:
-        return [file for file in Path(path).iterdir()
+        print('pt', cs_file.path)
+        return [file.name for file in Path(cs_file.path).iterdir()
                 if file.is_file() and not file.name.endswith('.sha1')]
     else:
-        return [file for file in Path(path).iterdir()
-                if file.is_file() and file.name.endswith('.sha1')]
+        return [file for file in cs_file.array]
 
 
-def new_files(src, dst):
+def new_files(src_sha1: CsFile, dst_sha1: CsFile):
     """
     :return: files list that are in both folders,
     files only in source and only in destination
     """
-    src_array = file_array(src, real_file=True)
-    dst_array = file_array(dst, real_file=True)
-    src_list = [file.name for file in src_array]
-    dst_list = [file.name for file in dst_array]
+    src_array = file_array(src_sha1, real_file=True)
+    print('rrr', src_sha1)
+    print('rrr', src_sha1.path)
+    print('rrr', src_sha1.instances)
+    dst_array = file_array(dst_sha1, real_file=True)
+    print('rrr', dst_sha1)
+    print('rrr', dst_sha1.path)
+    print('rrr', dst_sha1.instances)
+    print('srca', src_array)
+    print('dsta', dst_array)
+    src_list = [file for file in src_array]
+    dst_list = [file for file in dst_array]
+    print('srcl', src_list)
+    print('dstl', dst_list)
     sd_diff = sorted(list(set(src_list) - set(dst_list)))
     ds_diff = sorted(list(set(dst_list) - set(src_list)))
     common = sorted(list(set(dst_list) & set(src_list)))
-    # 0 - files in src and dst, 1 - new in src, 2 - not in src
+#     0 - files in src and dst, 1 - new in src, 2 - not in src
     return common, sd_diff, ds_diff
 
 
-def dict_mount(path, name, buffer, quiet, log, need_update: bool):
-    try:
-        with open(Path(f"{path}\\{name}.sha1"), 'r') as s:
-            string = s.readline()
-    except FileNotFoundError:
-        return sha1_write_queue(path, name, buffer, quiet, log) if need_update else 0
-    return string.split("   ")[0]  # ← 3 spaces!
+def dict_mount(path, name, checksums, buffer, quiet, log, need_update: bool):
+    if name in checksums.keys():
+        return checksums[name], False
+    else:
+        return (sha1_write(path, name, buffer, quiet, log), True) if need_update else (0, False)
 
 
-def exist_files_check(src, dst, file_list, buffer, quiet, log):
+def exist_files_check(src_sha1, dst_sha1, file_list, buffer, quiet, log):
     """
     Checking hashes in shared file_list for source and destination.
     :return: files list in source whose hash is different from destination
@@ -51,27 +60,23 @@ def exist_files_check(src, dst, file_list, buffer, quiet, log):
     """
     src_dict = {}
     dst_dict = {}
+    src_cs_array = src_sha1.read_file()
+    dst_cs_array = dst_sha1.read_file()
     for file in file_list:
-        src_dict[file] = dict_mount(src, file, buffer, quiet, log, need_update=True)
-        dst_dict[file] = dict_mount(dst, file, buffer, quiet, log, need_update=False)
-
+        src_dict[file], updated = dict_mount(src_sha1.path, file, src_cs_array,
+                                             buffer, quiet, log, need_update=True)
+        dst_dict[file], _ = dict_mount(dst_sha1.path, file, dst_cs_array,
+                                       buffer, quiet, log, need_update=False)
+        if updated:
+            src_cs_array = src_sha1.read_file()
     diff_list = [name for name, sha1 in dst_dict.items() if src_dict[name.rstrip()] != sha1]
     return diff_list
 
 
-def print_out(msg, quiet, log):
-    if not quiet:
-        print(f"{msg}")
-    if log:
-        logging.debug(f"{msg}")
-
-
-def sha1_write_queue(path, name, bufsize, quiet, log):
-
+def sha1_write(path, name, bufsize, quiet, log):
     q = queue.Queue()
     hash_array = {}
     block_counter = 0
-
     buffer = (bufsize if 2 ** 20 < bufsize < 2 ** 30
               else 100 * (2 ** 20))  # 1MB - 1GB else 100MB
 
@@ -109,15 +114,11 @@ def sha1_write_queue(path, name, bufsize, quiet, log):
     sha1 = hashlib.sha1()
     for i in sorted(list(hash_array)):
         sha1.update(hash_array[i])
-    with open(Path(f"{path}\\{name}.sha1"), 'w', encoding="utf8") as sha1file:
-        sha1file.write(f"{sha1.hexdigest()}   {name}")  # ← 3 spaces!
     return sha1.hexdigest()
 
 
-def sha1_remove(source, array, msg, quiet, log):
-    print_out(msg, quiet, log)
-    for x in array:
-        try:
-            os.remove(Path(f"{source}\\{x}.sha1"))
-        except FileNotFoundError:
-            pass
+def print_out(msg, quiet, log):
+    if not quiet:
+        print(f"{msg}")
+    if log:
+        logging.debug(f"{msg}")
