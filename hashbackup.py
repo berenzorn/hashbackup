@@ -73,7 +73,6 @@ if __name__ == '__main__':
                 lib.print_out(f"{x}", Q, L)
             lib.print_out("", Q, L)
             lib.print_out("Removing these files", Q, L)
-            # TODO fix
             dst_sha1.delete_sha1(source_list[2], "", Q, L)
             for x in source_list[2]:
                     os.remove(Path(f"{args.destination}\\{x}"))

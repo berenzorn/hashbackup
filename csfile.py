@@ -51,7 +51,7 @@ class CsFile:
     def delete_sha1(self, names: list, msg, quiet, log):
         lib.print_out(msg, quiet, log)
         for x in names:
-            if x in names:
+            if x in self.array:
                 del self.array[x]
 
     def write_file(self):
