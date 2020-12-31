@@ -53,7 +53,6 @@ if __name__ == '__main__':
         dst_sha1 = CsFile.get_instance(args.destination)
         # 0 - files in src and dst, 1 - new in src, 2 - not in src
         source_list = lib.new_files(src_sha1, dst_sha1)
-        print(source_list)
     else:
         lib.print_out("No such source or destination folder.", Q, L)
         raise SystemExit(0)
