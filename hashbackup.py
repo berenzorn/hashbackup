@@ -30,12 +30,12 @@ if __name__ == '__main__':
     if args.log:
         try:
             logging.basicConfig(filename=args.log, filemode='a', format='%(asctime)s %(message)s',
-                                datefmt='%m.%d.%Y %H:%M:%S', level=logging.DEBUG)
+                                datefmt='%d.%m.%Y %H:%M:%S', level=logging.DEBUG)
         except PermissionError:
             print("Can't write to log file, permission error")
             args.log = False
 
-    B = 1024 ** 2 * 100  # buffer_size
+    B = 100 * (2 ** 20)  # buffer_size
     Q = args.quiet
     L = args.log
 
