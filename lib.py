@@ -1,3 +1,4 @@
+import lzma
 import os
 import queue
 import hashlib
@@ -34,11 +35,11 @@ def new_files(src_file: CsFile, dst_file: CsFile):
     return common, sd_diff, ds_diff
 
 
-def dict_mount(path, name, checksums, buffer, quiet, log, need_update: bool):
+def dict_mount(path, name, checksums, buffer, quiet, log, need_update: bool) -> tuple[str, bool]:
     if name in checksums.keys():
         return checksums[name], False
     else:
-        return (sha1_write(path, name, buffer, quiet, log), True) if need_update else (0, False)
+        return (sha1_write(path, name, buffer, quiet, log), True) if need_update else (None, False)
 
 
 def exist_files_check(src_sha1, dst_sha1, file_list, buffer, quiet, log):
@@ -60,12 +61,22 @@ def exist_files_check(src_sha1, dst_sha1, file_list, buffer, quiet, log):
     return diff_list
 
 
-def sha1_write(path, name, bufsize, quiet, log):
+def compress(path, name, buffer, quiet, log):
+    filename = Path(f"{path}\\{name}")
+    print_out(f"Compressing: {filename}", quiet, log)
+    with lzma.open(f"{filename}.xz", mode='wb') as lz:
+        with open(filename, mode='rb') as unc:
+            while True:
+                block = unc.read(buffer)
+                if not block:
+                    break
+                lz.write(block)
+
+
+def sha1_write(path, name, buffer, quiet, log):
     q = queue.Queue()
     hash_array = {}
     block_counter = 0
-    buffer = (bufsize if 2 ** 20 < bufsize < 2 ** 30
-              else 100 * (2 ** 20))  # 1MB - 1GB else 100MB
 
     class Block:
         def __init__(self, number, data):
@@ -83,23 +94,20 @@ def sha1_write(path, name, bufsize, quiet, log):
 
     filename = Path(f"{path}\\{name}")
     print_out(f"Generating hash for: {filename}", quiet, log)
-    threads = 3 if os.cpu_count() >= 4 else 2
+    threads = 4 if os.cpu_count() >= 4 else 2
     for _ in range(threads):
         threading.Thread(target=worker, daemon=True).start()
     with open(filename, mode='rb') as file:
         while True:
-            try:
-                block = Block(block_counter, file.read(buffer))
-            except MemoryError:
-                print_out("Not enough memory.", quiet, log)
-                raise SystemExit(0)
+            block = Block(block_counter, file.read(buffer))
             if not block.data:
                 break
             q.put(block)
             block_counter += 1
     q.join()
     sha1 = hashlib.sha1()
-    for i in sorted(list(hash_array)):
+    hash_list = sorted(list(hash_array))
+    for i in hash_list:
         sha1.update(hash_array[i])
     return sha1.hexdigest()
 

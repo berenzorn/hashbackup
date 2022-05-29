@@ -16,16 +16,16 @@ if __name__ == '__main__':
     parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode, no output")
     parser.add_argument("-l", type=str, dest="log", metavar=" LOG", help="Write output to log file")
     args = parser.parse_args()
-
     if args.log:
         try:
+            # noinspection PyTypeChecker
             logging.basicConfig(filename=args.log, filemode='a', format='%(asctime)s %(message)s',
                                 datefmt='%d.%m.%Y %H:%M:%S', level=logging.DEBUG)
         except PermissionError:
             print("Can't write to log file, permission error")
             args.log = False
 
-    B = 100 * (2 ** 20)  # buffer_size
+    B = int(1e6)  # buffer_size
     Q = args.quiet
     L = args.log
 

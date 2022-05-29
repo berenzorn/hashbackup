@@ -29,13 +29,13 @@ if __name__ == '__main__':
 
     if args.log:
         try:
-            logging.basicConfig(filename=args.log, filemode='a', format='%(asctime)s %(message)s',
+            logging.basicConfig(filename=str(args.log), filemode='a', format='%(asctime)s %(message)s',
                                 datefmt='%d.%m.%Y %H:%M:%S', level=logging.DEBUG)
         except PermissionError:
             print("Can't write to log file, permission error")
             args.log = False
 
-    B = 100 * (2 ** 20)  # buffer_size
+    B = int(1e6)  # buffer_size
     Q = args.quiet
     L = args.log
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     if args.delete:
         if source_list[2]:
             lib.print_out("", Q, L)
-            lib.print_out("Files not in source: ", Q, L)
+            lib.print_out("Missing from source: ", Q, L)
             for x in source_list[2]:
                 lib.print_out(f"{x}", Q, L)
             lib.print_out("", Q, L)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         checksums = []
         for x in for_copy:
             lib.print_out(f"Copying file {x}", Q, L)
-            shutil.copy(f"{args.source}\\{x}", args.destination)
+            shutil.copyfile(f"{args.source}\\{x}", f"{args.destination}\\{x}")
             chksum = src_sha1.read_sha1(x)
             if chksum:
                 checksums.append(File(x, chksum))

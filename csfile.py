@@ -1,4 +1,4 @@
-import lib
+import logging
 
 
 class File:
@@ -49,7 +49,7 @@ class CsFile:
             self.array[x.name] = x.checksum
 
     def delete_sha1(self, names: list, msg, quiet, log):
-        lib.print_out(msg, quiet, log)
+        print_out(msg, quiet, log)
         for x in names:
             if x in self.array:
                 del self.array[x]
@@ -60,3 +60,9 @@ class CsFile:
             for index in sorted(self.array):
                 sha_file.write(f"{self.array[index]}   {index}\n")
 
+
+def print_out(msg, quiet, log):
+    if not quiet:
+        print(f"{msg}")
+    if log:
+        logging.debug(f"{msg}")
